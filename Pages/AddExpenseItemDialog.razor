@@ -3,6 +3,7 @@
 @inject HttpClient HttpClient
 @inject ILogger<AddExpenseItemDialog> Logger
 @inject NavigationManager NavigationManager
+@implements IDisposable
 
 <div class="dialog-container">
     <div class="dialog">
@@ -15,6 +16,7 @@
             <div>
                 <label>Occur Date</label>
                 <InputDate @bind-Value="newExpenseItem.OccurDate" />
+                <ValidationMessage For="@(() => newExpenseItem.OccurDate)" />
             </div>
             <div>
                 <label>Category</label>
@@ -32,50 +34,65 @@
                 <option value="@ExpenseCategory.Insurance">Insurance</option>
                 <option value="@ExpenseCategory.Other">Other</option>
                 </InputSelect>
+                <ValidationMessage For="@(() => newExpenseItem.Category)" />
 
             </div>
             <div>
                 <label>Price</label>
                 <InputNumber @bind-Value="newExpenseItem.Price"/>
+                <ValidationMessage For="@(() => newExpenseItem.Price)" />
             </div>
             <div>
                 <label>Description</label>
                 <InputText @bind-Value="newExpenseItem.Description" />
+                <ValidationMessage For="@(() => newExpenseItem.Description)" />
             </div>
         <div class="dialog-buttons">
             <button class="btn btn-secondary mr-auto" type="button" @onclick="OnCancel">Cancel</button>
-            <button class="btn btn-success ml-auto" type="submit">Add</button>
+            <button class="btn btn-success ml-auto" type="submit" disabled=@isError>Add</button>
         </div>
         </EditForm>
     </div>
 </div>
 
 @code {
-    private EditContext? editContext;
+    private EditContext editContext = null!;
     public ExpenseItem newExpenseItem { get; set; } = new();
     [Parameter] 
     public EventCallback OnCancel { get; set; }
     [Parameter] 
     public EventCallback OnConfirm { get; set; }
-    private bool isSubmitting = false;
+    private bool isError = false;
 
     protected override void OnInitialized()
     {
         editContext = new(newExpenseItem);
+        editContext.OnFieldChanged += HandleFieldChanged;
     }
+    public void Dispose()
+    {
+        editContext.OnFieldChanged -= HandleFieldChanged;
+    }
+    private void HandleFieldChanged(object? sender, FieldChangedEventArgs e)
+    {
+        isError = !editContext.Validate();
+        StateHasChanged();
+    }
+
     private async Task HandleValidSubmit()
     {
-        if (editContext != null && editContext.Validate())
-        {
+        // not needed in OnValidSubmit
+        //if (editContext != null && editContext.Validate())
+        // {
             Logger.LogInformation("HandleSubmit called: Form is valid");
-            isSubmitting = true;
+            //isSubmitting = true;
             var response = await HttpClient.PostAsJsonAsync(NavigationManager.BaseUri + "api/expense", newExpenseItem);
-            isSubmitting = false;
+            //isSubmitting = false;
             await OnConfirm.InvokeAsync();
-        }
-        else
-        {
-            Logger.LogInformation("HandleSubmit called: Form is INVALID");
-        }
+        // }
+        // else
+        // {
+        //     Logger.LogInformation("HandleSubmit called: Form is INVALID");
+        // }
     }
 }
