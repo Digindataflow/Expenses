@@ -1,0 +1,81 @@
+@using Expenses.Models
+@using Microsoft.Extensions.Logging
+@inject HttpClient HttpClient
+@inject ILogger<AddExpenseItemDialog> Logger
+@inject NavigationManager NavigationManager
+
+<div class="dialog-container">
+    <div class="dialog">
+        <div class="dialog-title">
+            <h2>Add new expense item</h2>
+        </div>
+        <EditForm EditContext="editContext" OnValidSubmit="@HandleValidSubmit">
+            <DataAnnotationsValidator />
+            <ValidationSummary />
+            <div>
+                <label>Occur Date</label>
+                <InputDate @bind-Value="newExpenseItem.OccurDate" />
+            </div>
+            <div>
+                <label>Category</label>
+                <InputSelect @bind-Value="newExpenseItem.Category" >
+                <option value="@ExpenseCategory.Hygiene">Hygiene</option>
+                <option value="@ExpenseCategory.Clothes">Clothes</option>
+                <option value="@ExpenseCategory.Restraurant">Restraurant</option>
+                <option value="@ExpenseCategory.Vacation">Vacation</option>
+                <option value="@ExpenseCategory.Food">Food</option>
+                <option value="@ExpenseCategory.Technique">Technique</option>
+                <option value="@ExpenseCategory.Health">Health</option>
+                <option value="@ExpenseCategory.Mobility">Mobility</option>
+                <option value="@ExpenseCategory.Entertainment">Entertainment</option>
+                <option value="@ExpenseCategory.Home">Home</option>
+                <option value="@ExpenseCategory.Insurance">Insurance</option>
+                <option value="@ExpenseCategory.Other">Other</option>
+                </InputSelect>
+
+            </div>
+            <div>
+                <label>Price</label>
+                <InputNumber @bind-Value="newExpenseItem.Price"/>
+            </div>
+            <div>
+                <label>Description</label>
+                <InputText @bind-Value="newExpenseItem.Description" />
+            </div>
+        <div class="dialog-buttons">
+            <button class="btn btn-secondary mr-auto" type="button" @onclick="OnCancel">Cancel</button>
+            <button class="btn btn-success ml-auto" type="submit">Add</button>
+        </div>
+        </EditForm>
+    </div>
+</div>
+
+@code {
+    private EditContext? editContext;
+    public ExpenseItem newExpenseItem { get; set; } = new();
+    [Parameter] 
+    public EventCallback OnCancel { get; set; }
+    [Parameter] 
+    public EventCallback OnConfirm { get; set; }
+    private bool isSubmitting = false;
+
+    protected override void OnInitialized()
+    {
+        editContext = new(newExpenseItem);
+    }
+    private async Task HandleValidSubmit()
+    {
+        if (editContext != null && editContext.Validate())
+        {
+            Logger.LogInformation("HandleSubmit called: Form is valid");
+            isSubmitting = true;
+            var response = await HttpClient.PostAsJsonAsync(NavigationManager.BaseUri + "api/expense", newExpenseItem);
+            isSubmitting = false;
+            await OnConfirm.InvokeAsync();
+        }
+        else
+        {
+            Logger.LogInformation("HandleSubmit called: Form is INVALID");
+        }
+    }
+}

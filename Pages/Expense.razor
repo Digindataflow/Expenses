@@ -1,0 +1,90 @@
+﻿@page "/expenseitems"
+@using Expenses.Data
+@using Expenses.Models
+@inject HttpClient HttpClient
+@inject NavigationManager NavigationManager
+
+<h3>Expense Items</h3>
+
+<table>
+    <thead>
+        <tr>
+            <th colspan="2">Date</th>
+            <th colspan="2">Category</th>
+            <th colspan="2">Description</th>
+            <th colspan="2">Price</th>
+            <th colspan="2"></th>
+        </tr>
+    </thead>
+    <tbody>
+        @if (ExpenseItems != null)
+        {
+            @foreach (var i in ExpenseItems)
+            {
+                <tr>
+                <td>@i.OccurDate</td>
+                <td>@i.Category</td>
+                <td>@i.Description</td>
+                <td>@i.Price</td>
+                <td> 
+                    <button @onclick="@(e => EditExpenseItemDialog(i.ID))" type="button">Edit</button> | 
+                    <button @onclick="@(e => DeleteExpenseItem(i.ID))" type="button">Delete</button> | 
+                </td>
+                </tr>
+            }
+        }
+
+    </tbody>
+
+</table>
+
+<button @onclick="ShowAddExpenseItemDialog">Add expense item</button>
+@if (showingAddExpenseItemDialog)
+{
+    <AddExpenseItemDialog OnCancel="CancelDialog" OnConfirm="ConfirmDialog"/>
+}
+
+@if (showingEditExpenseItemDialog)
+{
+    <EditExpenseItemDialog ExpenseItemID="@ExpenseItemID" OnCancel="CancelDialog" OnConfirm="ConfirmDialog"/>
+}
+
+@code {
+    private ICollection<ExpenseItem>? ExpenseItems;
+    private int ExpenseItemID;
+
+    private bool showingAddExpenseItemDialog = false;
+    private bool showingEditExpenseItemDialog = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        ExpenseItems = await HttpClient.GetFromJsonAsync<List<ExpenseItem>>(
+            NavigationManager.BaseUri + "api/expense");
+    }
+
+    private void EditExpenseItemDialog(int id) {
+        showingEditExpenseItemDialog = true;
+        ExpenseItemID = id;
+    }
+
+    private async Task DeleteExpenseItem(int id){
+        await HttpClient.DeleteFromJsonAsync<int>(NavigationManager.BaseUri + "api/expense");
+    }
+
+    private void ShowAddExpenseItemDialog()
+    {
+        showingAddExpenseItemDialog = true;
+    }
+
+    private void CancelDialog(){
+        showingAddExpenseItemDialog = false;
+        showingEditExpenseItemDialog = false;
+    }
+
+    private async Task ConfirmDialog() {
+        showingAddExpenseItemDialog = false;
+        showingEditExpenseItemDialog = false;
+        ExpenseItems = await HttpClient.GetFromJsonAsync<List<ExpenseItem>>(
+            NavigationManager.BaseUri + "api/expense"); 
+    }
+}
