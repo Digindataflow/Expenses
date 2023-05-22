@@ -54,15 +54,23 @@
 @code {
     private ICollection<ExpenseItem>? ExpenseItems;
     private int ExpenseItemID;
+    private bool invalidConnection;
 
     private bool showingAddExpenseItemDialog = false;
     private bool showingEditExpenseItemDialog = false;
 
 
     private async Task InitializeModelAsync()
-    {
-        ExpenseItems = await HttpClient.GetFromJsonAsync<List<ExpenseItem>>(
-            NavigationManager.BaseUri + "api/expense");
+    {   
+        try {
+            ExpenseItems = await HttpClient.GetFromJsonAsync<List<ExpenseItem>>(
+                $"{NavigationManager.BaseUri}api/expense");
+        }
+        catch (Exception ex) {
+            invalidConnection = true;
+            Console.Error.WriteLine(ex);
+        }
+
     }
 
     protected override async Task OnInitializedAsync()
@@ -77,9 +85,15 @@
     }
 
     private async Task DeleteExpenseItem(int id){
-        var response = await HttpClient.DeleteAsync(
-            $"{NavigationManager.BaseUri}api/expense/{ExpenseItemID}"
-        );
+        try {
+            var response = await HttpClient.DeleteAsync(
+                $"{NavigationManager.BaseUri}api/expense/{id}"
+            );
+        }
+        catch (Exception ex) {
+            invalidConnection = true;
+            Console.Error.WriteLine(ex);
+        }
         await InitializeModelAsync();
     }
 

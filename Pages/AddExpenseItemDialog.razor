@@ -86,7 +86,10 @@
         // {
             Logger.LogInformation("HandleSubmit called: Form is valid");
             //isSubmitting = true;
-            var response = await HttpClient.PostAsJsonAsync(NavigationManager.BaseUri + "api/expense", newExpenseItem);
+            var response = await HttpClient.PostAsJsonAsync(
+                $"{NavigationManager.BaseUri}api/expense", 
+                newExpenseItem
+            );
             //isSubmitting = false;
             await OnConfirm.InvokeAsync();
         // }
