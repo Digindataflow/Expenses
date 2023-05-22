@@ -22,6 +22,16 @@ public class ExpenseItemController : Controller
         return await _service.GetExpenseItemsAsync();
     }
 
+    [HttpGet("{id}")]
+    public async Task<ActionResult<ExpenseItem>> GetByID(int id)
+    {
+        var item = await _service.GetExpenseItemById(id);
+        if (item != null) {
+            return item;
+        }
+        return NotFound();
+    }
+
     [HttpPost]
     public async Task<ActionResult<int>> AddExpenseItem(ExpenseItem newExpenseItem)
     {

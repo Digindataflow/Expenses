@@ -1,8 +1,10 @@
 ﻿@page "/expenseitems"
 @using Expenses.Data
 @using Expenses.Models
+@using Microsoft.Extensions.Logging
 @inject HttpClient HttpClient
 @inject NavigationManager NavigationManager
+@inject ILogger<Expense> Logger
 
 <h3>Expense Items</h3>
 
@@ -56,19 +58,29 @@
     private bool showingAddExpenseItemDialog = false;
     private bool showingEditExpenseItemDialog = false;
 
-    protected override async Task OnInitializedAsync()
+
+    private async Task InitializeModelAsync()
     {
         ExpenseItems = await HttpClient.GetFromJsonAsync<List<ExpenseItem>>(
             NavigationManager.BaseUri + "api/expense");
     }
 
+    protected override async Task OnInitializedAsync()
+    {
+        await InitializeModelAsync();
+    }
+
     private void EditExpenseItemDialog(int id) {
         showingEditExpenseItemDialog = true;
         ExpenseItemID = id;
+        Logger.LogInformation($"ExpenseItemID changed to {id}");
     }
 
     private async Task DeleteExpenseItem(int id){
-        await HttpClient.DeleteFromJsonAsync<int>(NavigationManager.BaseUri + "api/expense");
+        var response = await HttpClient.DeleteAsync(
+            $"{NavigationManager.BaseUri}api/expense/{ExpenseItemID}"
+        );
+        await InitializeModelAsync();
     }
 
     private void ShowAddExpenseItemDialog()
@@ -84,7 +96,6 @@
     private async Task ConfirmDialog() {
         showingAddExpenseItemDialog = false;
         showingEditExpenseItemDialog = false;
-        ExpenseItems = await HttpClient.GetFromJsonAsync<List<ExpenseItem>>(
-            NavigationManager.BaseUri + "api/expense"); 
+        await InitializeModelAsync();
     }
 }

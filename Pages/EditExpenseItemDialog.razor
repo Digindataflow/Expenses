@@ -1,7 +1,7 @@
 @using Expenses.Models
 @using Microsoft.Extensions.Logging
 @inject HttpClient HttpClient
-@inject ILogger<AddExpenseItemDialog> Logger
+@inject ILogger<EditExpenseItemDialog> Logger
 @inject NavigationManager NavigationManager
 
 <div class="dialog-container">
@@ -58,18 +58,32 @@
     [Parameter] 
     public EventCallback OnConfirm { get; set; }
     private bool isSubmitting = false;
-    private int ExpenseItemID; 
+    [Parameter] 
+    public int ExpenseItemID { get; set; }
 
-    protected override async void OnInitialized()
+    protected override async Task OnParametersSetAsync()
+    {
+        await InitializeModel();
+
+        await base.OnParametersSetAsync();
+    }
+
+    private async Task InitializeModel()
     {
         var item = await HttpClient.GetFromJsonAsync<ExpenseItem>(
-            NavigationManager.BaseUri + "api/expense/" + ExpenseItemID.ToString());
+            $"{NavigationManager.BaseUri}api/expense/{ExpenseItemID}"
+        );
         if (item != null) {
             newExpenseItem = item;
-            editContext = new(newExpenseItem);
         }
-        
     }
+    
+    protected override async void OnInitialized()
+    {
+        editContext = new(newExpenseItem);
+        await InitializeModel();
+    }
+
     private async Task HandleValidSubmit()
     {
         if (editContext != null && editContext.Validate())
@@ -77,7 +91,7 @@
             Logger.LogInformation("HandleSubmit called: Form is valid");
             isSubmitting = true;
             var response = await HttpClient.PutAsJsonAsync(
-                NavigationManager.BaseUri + "api/expense/" + ExpenseItemID.ToString(), 
+                $"{NavigationManager.BaseUri}api/expense/{ExpenseItemID}", 
                 newExpenseItem);
             isSubmitting = false;
             await OnConfirm.InvokeAsync();
